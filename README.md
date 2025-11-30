@@ -77,6 +77,8 @@ This section follows the Mikrotik Container documentation with additional steps 
 | TAILSCALE_ARGS    | Additional arguments passed to tailscale      | Optional. Note:<br/> ```--accept-routes``` is required to accept the advertised routes of the other subnet routers.<br/> ```--netfilter-mode``` controls the degree of firewall configuration using iptables. See [tailscale up](https://tailscale.com/kb/1241/tailscale-up). |
 | TAILSCALED_ARGS   | Additional arguments passed to tailscaled     | Optional                                     |
 | STARTUP_SCRIPT    | Extra script to execute in container before tailscaled | Optional |
+| PRE_START_COMMAND | Extra comand to execute in container before tailscaled | Optional |
+| IPTABLES_MODE |  Use ```legacy``` to run use legacy bin (need for some old routers) | Optional |
 
 Example Tailscale control server configuration:
 ```

@@ -10,6 +10,23 @@ echo 'net.ipv4.ip_forward = 1' | tee -a /etc/sysctl.conf
 echo 'net.ipv6.conf.all.forwarding = 1' | tee -a /etc/sysctl.conf
 sysctl -p /etc/sysctl.conf
 
+# IPTables Engine Selection (MikroTik Fix AC2)
+if [ "$IPTABLES_MODE" = "legacy" ]; then
+    if [ -f "/sbin/iptables-legacy" ]; then
+        echo "Switching to Legacy IPTables mode..."
+        ln -sf /sbin/iptables-legacy /sbin/iptables
+        ln -sf /sbin/ip6tables-legacy /sbin/ip6tables
+    else
+        echo "WARNING: iptables-legacy not found, using default."
+    fi
+fi
+
+# Custom Pre-Start Command
+if [[ -n "$PRE_START_COMMAND" ]]; then
+    echo "Executing Pre-Start: $PRE_START_COMMAND"
+    eval "$PRE_START_COMMAND"
+fi
+
 # Prepare run dirs
 if [ ! -d "/var/run/sshd" ]; then
   mkdir -p /var/run/sshd
