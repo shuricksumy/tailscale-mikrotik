@@ -19,11 +19,12 @@
 #
 ############################################################################
 
-FROM golang:1.25-alpine AS build-env
+FROM golang:1.25.5-alpine AS build-env
 
 WORKDIR /go/src/tailscale
 
 COPY tailscale/go.mod tailscale/go.sum ./
+
 RUN go mod download
 
 RUN apk add --no-cache upx
@@ -50,7 +51,7 @@ ARG VERSION_GIT_HASH=""
 ENV VERSION_GIT_HASH=$VERSION_GIT_HASH
 ARG TARGETARCH
 
-RUN GOARCH=$TARGETARCH go install -ldflags="-w -s\
+RUN GOARCH=$TARGETARCH go install -ldflags="-w -s \
       -X tailscale.com/version.Long=$VERSION_LONG \
       -X tailscale.com/version.Short=$VERSION_SHORT \
       -X tailscale.com/version.GitCommit=$VERSION_GIT_HASH" \
@@ -58,19 +59,31 @@ RUN GOARCH=$TARGETARCH go install -ldflags="-w -s\
 
 RUN upx /go/bin/tailscale && upx /go/bin/tailscaled
 
-FROM alpine:3.22
+FROM alpine:3.23
 
-RUN apk add --no-cache ca-certificates iptables iproute2 ip6tables bash openssh curl jq
+RUN apk add --no-cache \
+    ca-certificates \
+    iptables \
+    iptables-legacy \
+    ip6tables \
+    iproute2 \
+    bash \
+    openssh \
+    curl \
+    jq
 
-RUN ln -s /sbin/iptables-legacy /sbin/iptables
-RUN ln -s /sbin/ip6tables-legacy /sbin/ip6tables
+# RUN ln -s /sbin/iptables-legacy /sbin/iptables
+# RUN ln -s /sbin/ip6tables-legacy /sbin/ip6tables
 
-RUN ssh-keygen -f /etc/ssh/ssh_host_rsa_key -N '' -t rsa
-RUN ssh-keygen -f /etc/ssh/ssh_host_ed25519_key -N '' -t ed25519
+# RUN ssh-keygen -A && \
+RUN ssh-keygen -f /etc/ssh/ssh_host_rsa_key -N '' -t rsa && \
+    ssh-keygen -f /etc/ssh/ssh_host_ed25519_key -N '' -t ed25519
 
 COPY --from=build-env /go/bin/* /usr/local/bin/
 COPY sshd_config /etc/ssh/
 COPY tailscale.sh /usr/local/bin
+
+RUN chmod +x /usr/local/bin/tailscale.sh
 
 EXPOSE 22
 CMD ["/usr/local/bin/tailscale.sh"]

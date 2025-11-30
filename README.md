@@ -73,10 +73,12 @@ This section follows the Mikrotik Container documentation with additional steps 
 | ADVERTISE_ROUTES  | Comma-separated list of routes to advertise   |                                              |
 | CONTAINER_GATEWAY | The container bridge (veth1) IP address on the router |                                              |
 | LOGIN_SERVER      | Headscale login server                        | Only required for Headscale control server. Do not set if using Tailscale       |
-| UPDATE_TAILSCALE      | Update tailscale on container startup                         |       |
+| UPDATE_TAILSCALE      | Update tailscale on container startup                       |  Set ```Y```     |
 | TAILSCALE_ARGS    | Additional arguments passed to tailscale      | Optional. Note:<br/> ```--accept-routes``` is required to accept the advertised routes of the other subnet routers.<br/> ```--netfilter-mode``` controls the degree of firewall configuration using iptables. See [tailscale up](https://tailscale.com/kb/1241/tailscale-up). |
 | TAILSCALED_ARGS   | Additional arguments passed to tailscaled     | Optional                                     |
 | STARTUP_SCRIPT    | Extra script to execute in container before tailscaled | Optional |
+| PRE_START_COMMAND | Extra comand to execute in container before tailscaled | Optional |
+| IPTABLES_MODE |  Use ```legacy``` to run use legacy bin (need for some old routers) | Optional |
 
 Example Tailscale control server configuration:
 ```
@@ -87,6 +89,8 @@ add list="tailscale" key="ADVERTISE_ROUTES" value="192.168.88.0/24"
 add list="tailscale" key="CONTAINER_GATEWAY" value="172.17.0.1"
 add list="tailscale" key="UPDATE_TAILSCALE" value="Y"
 add list="tailscale" key="TAILSCALE_ARGS" value="--accept-routes --advertise-exit-node"
+add list="tailscale" key="IPTABLES_MODE" value="legacy"
+add list="tailscale" key="PRE_START_COMMAND" value="iptables -t nat -A POSTROUTING -o tail+ -j MASQUERADE; iptables -t nat -A POSTROUTING -o veth+ -j MASQUERADE"
 ```
 Example Headscale control server configuration:
 ```
@@ -97,6 +101,8 @@ add list="tailscale" key="ADVERTISE_ROUTES" value="192.168.88.0/24"
 add list="tailscale" key="CONTAINER_GATEWAY" value="172.17.0.1"
 add list="tailscale" key="LOGIN_SERVER" value="http://headscale.example.com:8080"
 add list="tailscale" key="TAILSCALE_ARGS" value="--accept-routes --advertise-exit-node"
+add list="tailscale" key="IPTABLES_MODE" value="legacy"
+add list="tailscale" key="PRE_START_COMMAND" value="iptables -t nat -A POSTROUTING -o tail+ -j MASQUERADE; iptables -t nat -A POSTROUTING -o veth+ -j MASQUERADE"
 ```
 
 Define the the mount as per below.
@@ -126,7 +132,7 @@ Configure the registry URL and add the container.
 /container/config 
 set registry-url=https://ghcr.io tmpdir=disk1/pull
 
-/container add remote-image=fluent-networks/tailscale-mikrotik:latest interface=veth1 envlist=tailscale root-dir=disk1/containers/tailscale mounts=tailscale start-on-boot=yes hostname=mikrotik dns=8.8.4.4,8.8.8.8
+/container add remote-image=shuricksumy/tailscale-mikrotik:latest interface=veth1 envlist=tailscale root-dir=disk1/containers/tailscale mounts=tailscale start-on-boot=yes hostname=mikrotik dns=8.8.4.4,8.8.8.8
 ```
 
 6b. Tar archive file
